@@ -2,6 +2,7 @@ package com.scoreboard;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -41,9 +42,21 @@ public class AcceptThread implements Runnable {
 					while (!Thread.interrupted()) {
 
 						if (br.ready()) {
+							PrintWriter pw = new PrintWriter(
+									clientSock.getOutputStream(), true);
 
 							anmeldung = br.readLine();
 							System.out.println(anmeldung);
+
+							String[] anmeldeDaten = anmeldung.split(";");
+
+							if (anmeldeDaten[0].equals("a")
+									&& anmeldeDaten[1].equals("b")) {
+								pw.println("1");
+							} else {
+								pw.println("0");
+							}
+
 							Thread.currentThread().interrupt();
 						}
 					}
