@@ -1,8 +1,5 @@
 package com.scoreboard;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -13,7 +10,6 @@ import java.net.Socket;
 public class AcceptThread implements Runnable {
 
 	private ServerSocket serverSock;
-	private String anmeldung;
 
 	/**
 	 * Im Konstruktor wird der "ServerSocket" übergeben.
@@ -31,47 +27,15 @@ public class AcceptThread implements Runnable {
 	public void run() {
 
 		if (serverSock != null) {
+			System.out.println("warte auf Verbindung");
 			while (!Thread.interrupted()) {
 				try {
 					Socket clientSock = serverSock.accept();
 					System.out.println(clientSock.getInetAddress());
-					BufferedReader br = new BufferedReader(
-							new InputStreamReader(clientSock.getInputStream()));
-					int counter = 0;
 
-					while (!Thread.interrupted()) {
+					new Thread(new QueryHandler(clientSock)).start();
 
-						if (br.ready()) {
-							PrintWriter pw = new PrintWriter(
-									clientSock.getOutputStream(), true);
-
-							anmeldung = br.readLine();
-							System.out.println(anmeldung);
-
-							String[] anmeldeDaten = anmeldung.split(";");
-
-							if (anmeldeDaten[0].equals("a")
-									&& anmeldeDaten[1].equals("b")) {
-								pw.println("1");
-							} else {
-								pw.println("0");
-							}
-
-							Thread.currentThread().interrupt();
-						}
-					}
-
-					counter++;
-					doWait();
-
-					if (counter > 1000) {
-
-						Thread.currentThread().interrupt();
-						clientSock.close();
-					}
-				}
-
-				catch (Exception e) {
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 				doWait();

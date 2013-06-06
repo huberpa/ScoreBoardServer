@@ -8,22 +8,25 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class MySQLConnection {
-	private static Connection verbindung = null;
+	private static Connection connection = null;
 
-	// Hostname
-	private static String dbHost = "127.0.0.1";
+	// Hostname intern
+	// private static String dbHost = "10.3.15.124";
+	private static String dbHost = "localhost";
+	// extern
+	// private static String dbHost = "193.196.7.45";
 
 	// Port -- Standard: 3306
 	private static String dbPort = "3306";
 
 	// Datenbankname
-	private static String datenbankName = "portfolio";
+	private static String datenbankName = "ScoreBoard";
 
 	// Datenbankuser
 	private static String dbUser = "root";
 
 	// Datenbankpasswort
-	private static String dbPasswort = "";
+	private static String dbPasswort = "patrick1!";
 
 	/**
 	 * Importiert den ODBC-Treiber und stellt eine Verbindung mit dem Server her
@@ -40,9 +43,10 @@ public class MySQLConnection {
 			 * Verbindung zur ODBC-Datenbank 'portfolio' herstellen. Es wird die
 			 * JDBC-ODBC-Brücke verwendet.
 			 */
-			verbindung = DriverManager.getConnection("jdbc:mysql://" + dbHost
+			connection = DriverManager.getConnection("jdbc:mysql://" + dbHost
 					+ ":" + dbPort + "/" + datenbankName + "?user=" + dbUser
 					+ "&password=" + dbPasswort);
+
 		} catch (ClassNotFoundException e) {
 			fehlerAusgeben("Fehler beim öffnen des SQL-Treibers: 'com.mysql.jdbc.Driver'\n"
 					+ "Treiber nicht gefunden\n\n"
@@ -66,10 +70,10 @@ public class MySQLConnection {
 
 	public static boolean loescheTabelle(String tabelle) {
 
-		verbindung = gibVerbindungsInstanz();
-		if (verbindung != null) {
+		connection = getConnectionInstance();
+		if (connection != null) {
 			try {
-				PreparedStatement pstmt = verbindung
+				PreparedStatement pstmt = connection
 						.prepareStatement("DELETE FROM `" + tabelle
 								+ "` WHERE 1");
 				pstmt.executeUpdate();
@@ -81,321 +85,122 @@ public class MySQLConnection {
 			}
 		}
 		return false;
-
 	}
 
-	/**
-	 * Fügt eine neue Zeile in der Datenbank in die Tabelle "Anlagen_ID" ein
-	 * 
-	 * @param arguments
-	 *            Daten die gespeichert werden sollen
-	 */
-	public static void insertIn_AnlagenID(String[] arguments) {
-		verbindung = gibVerbindungsInstanz();
-		if (verbindung != null) {
+	public static ResultSet getAllUsers() {
+
+		connection = getConnectionInstance();
+		if (connection != null) {
+			// Anfrage-Statement erzeugen.
 			try {
-				PreparedStatement pstmt = verbindung
-						.prepareStatement("INSERT INTO anlagen_id (Anlagen_ID, Anlagenname, Zertifikat, Dokumentation, Bonität) "
-								+ "VALUES (?, ?, ?, ?, ?)");
-				pstmt.setInt(1, Integer.parseInt(arguments[0]));
-				pstmt.setString(2, arguments[1]);
-				if (arguments[2].equals("1")) {
-					pstmt.setBoolean(3, true);
-				} else {
-					pstmt.setBoolean(3, false);
-				}
-				pstmt.setString(4, arguments[3]);
-				pstmt.setString(5, arguments[4]);
-				pstmt.executeUpdate();
-			} catch (SQLException ex) {
-				fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
-						+ "anlagen_id"
+				PreparedStatement pstmt = connection
+						.prepareStatement("SELECT `Name`, `Passwort` FROM `USER` WHERE 1");
+				pstmt.executeQuery();
+
+				// Ergebnistabelle erzeugen und abholen.
+				return pstmt.executeQuery();
+
+			} catch (SQLException e) {
+				fehlerAusgeben("Fehler beim Abfragen der Daten vom Server beim Ausführen des Befehls: \n'"
 						+ "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
 			}
 		}
+		return null;
+
 	}
 
-	/**
-	 * Fügt eine neue Zeile in der Datenbank in die Tabelle "Anlagen-Jahr_ID"
-	 * ein
-	 * 
-	 * @param arguments
-	 *            Daten die gespeichert werden sollen
-	 */
-	public static void insertIn_AnlagenJahrID(String[] arguments) {
-		verbindung = gibVerbindungsInstanz();
-		if (verbindung != null) {
+	public static ResultSet getAllGroupsFromUser(String userName) {
+
+		connection = getConnectionInstance();
+		if (connection != null) {
+			// Anfrage-Statement erzeugen.
 			try {
-				PreparedStatement pstmt = verbindung
-						.prepareStatement("INSERT INTO `anlagen-jahr_id`"
-								+ "(`Anlagen_Jahr_ID`, `Anlagen_ID`, `Jahr`, `EEG 2009`, `Grundvergütung (09)`, `NaWaRo-Bonus (09)`, `Tech-Bonus`, "
-								+ "`Formaldehyd-Bonus`, `biogene Reststoffe (09)`, `EEG 2012`, `Grundvergütung (12)`, `Biogene Reststoffe (12)`, "
-								+ "`min Klasse 2`, `max Klasse 2`, `Aufbereitungsbonus`, `TankstellenGas`, `THG-Emissionswert`, `Anbauland`, `B2C-Gas`) "
-								+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+				PreparedStatement pstmt = connection
+						.prepareStatement("SELECT `Gruppenname` FROM `VERBINDUNG` WHERE `Name` = ?");
+				pstmt.setString(1, userName);
+				pstmt.executeQuery();
 
-				pstmt.setInt(1, Integer.parseInt(arguments[0]));
-				pstmt.setInt(2, Integer.parseInt(arguments[1]));
-				pstmt.setInt(3, Integer.parseInt(arguments[2]));
-				if (arguments[3].equals("1")) {
-					pstmt.setBoolean(4, true);
-				} else {
-					pstmt.setBoolean(4, false);
-				}
-				if (arguments[4].equals("1")) {
-					pstmt.setBoolean(5, true);
-				} else {
-					pstmt.setBoolean(5, false);
-				}
-				if (arguments[5].equals("1")) {
-					pstmt.setBoolean(6, true);
-				} else {
-					pstmt.setBoolean(6, false);
-				}
-				if (arguments[6].length() > 0) {
-					pstmt.setInt(7, Integer.parseInt(arguments[6]));
-				} else {
-					pstmt.setInt(7, -1);
-				}
-				if (arguments[7].equals("1")) {
-					pstmt.setBoolean(8, true);
-				} else {
-					pstmt.setBoolean(8, false);
-				}
-				if (arguments[8].equals("1")) {
-					pstmt.setBoolean(9, true);
-				} else {
-					pstmt.setBoolean(9, false);
-				}
-				if (arguments[9].equals("1")) {
-					pstmt.setBoolean(10, true);
-				} else {
-					pstmt.setBoolean(10, false);
-				}
-				if (arguments[10].equals("1")) {
-					pstmt.setBoolean(11, true);
-				} else {
-					pstmt.setBoolean(11, false);
-				}
-				if (arguments[11].equals("1")) {
-					pstmt.setBoolean(12, true);
-				} else {
-					pstmt.setBoolean(12, false);
-				}
-				if (arguments[12].length() > 0) {
-					pstmt.setInt(13, Integer.parseInt(arguments[12]));
-				} else {
-					pstmt.setInt(13, -1);
-				}
-				if (arguments[13].length() > 0) {
-					pstmt.setInt(14, Integer.parseInt(arguments[13]));
-				} else {
-					pstmt.setInt(14, -1);
-				}
-				if (arguments[14].length() > 0) {
-					pstmt.setInt(15, Integer.parseInt(arguments[14]));
-				} else {
-					pstmt.setInt(15, -1);
-				}
-				if (arguments[15].equals("1")) {
-					pstmt.setBoolean(16, true);
-				} else {
-					pstmt.setBoolean(16, false);
-				}
-				pstmt.setDouble(17, Double.valueOf(arguments[16]));
-				pstmt.setString(18, arguments[17]);
-				if (arguments[18].equals("1")) {
-					pstmt.setBoolean(19, true);
-				} else {
-					pstmt.setBoolean(19, false);
-				}
+				// Ergebnistabelle erzeugen und abholen.
+				return pstmt.executeQuery();
 
-				pstmt.executeUpdate();
 			} catch (SQLException e) {
-				try {
-					PreparedStatement pstmt = verbindung
-							.prepareStatement("UPDATE `anlagen-jahr_id` SET "
-									+ "`Anlagen_Jahr_ID` = ?, `Anlagen_ID` = ?, `Jahr` = ?, `EEG 2009` = ?, "
-									+ "`Grundvergütung (09)` = ?, `NaWaRo-Bonus (09)` = ?, `Tech-Bonus` = ?, "
-									+ "`Formaldehyd-Bonus` = ?, `biogene Reststoffe (09)` = ?, `EEG 2012` = ?, "
-									+ "`Grundvergütung (12)` = ?, `Biogene Reststoffe (12)` = ?, "
-									+ "`min Klasse 2` = ?, `max Klasse 2` = ?, `Aufbereitungsbonus` = ?, "
-									+ "`TankstellenGas` = ?, `THG-Emissionswert` = ?, `Anbauland` = ?, `B2C-Gas` = ? "
-									+ "WHERE `Anlagen_Jahr_ID` = ?");
-
-					pstmt.setInt(1, Integer.parseInt(arguments[0]));
-					pstmt.setInt(2, Integer.parseInt(arguments[1]));
-					pstmt.setInt(3, Integer.parseInt(arguments[2]));
-					if (arguments[3].equals("1")) {
-						pstmt.setBoolean(4, true);
-					} else {
-						pstmt.setBoolean(4, false);
-					}
-					if (arguments[4].equals("1")) {
-						pstmt.setBoolean(5, true);
-					} else {
-						pstmt.setBoolean(5, false);
-					}
-					if (arguments[5].equals("1")) {
-						pstmt.setBoolean(6, true);
-					} else {
-						pstmt.setBoolean(6, false);
-					}
-					if (arguments[6].length() > 0) {
-						pstmt.setInt(7, Integer.parseInt(arguments[6]));
-					} else {
-						pstmt.setInt(7, -1);
-					}
-					if (arguments[7].equals("1")) {
-						pstmt.setBoolean(8, true);
-					} else {
-						pstmt.setBoolean(8, false);
-					}
-					if (arguments[8].equals("1")) {
-						pstmt.setBoolean(9, true);
-					} else {
-						pstmt.setBoolean(9, false);
-					}
-					if (arguments[9].equals("1")) {
-						pstmt.setBoolean(10, true);
-					} else {
-						pstmt.setBoolean(10, false);
-					}
-					if (arguments[10].equals("1")) {
-						pstmt.setBoolean(11, true);
-					} else {
-						pstmt.setBoolean(11, false);
-					}
-					if (arguments[11].equals("1")) {
-						pstmt.setBoolean(12, true);
-					} else {
-						pstmt.setBoolean(12, false);
-					}
-					if (arguments[12].length() > 0) {
-						pstmt.setInt(13, Integer.parseInt(arguments[12]));
-					} else {
-						pstmt.setInt(13, -1);
-					}
-					if (arguments[13].length() > 0) {
-						pstmt.setInt(14, Integer.parseInt(arguments[13]));
-					} else {
-						pstmt.setInt(14, -1);
-					}
-					if (arguments[14].length() > 0) {
-						pstmt.setInt(15, Integer.parseInt(arguments[14]));
-					} else {
-						pstmt.setInt(15, -1);
-					}
-					if (arguments[15].equals("1")) {
-						pstmt.setBoolean(16, true);
-					} else {
-						pstmt.setBoolean(16, false);
-					}
-					pstmt.setDouble(17, Double.valueOf(arguments[16]));
-					pstmt.setString(18, arguments[17]);
-					if (arguments[18].equals("1")) {
-						pstmt.setBoolean(19, true);
-					} else {
-						pstmt.setBoolean(19, false);
-					}
-					pstmt.setInt(20, Integer.parseInt(arguments[0]));
-
-					pstmt.executeUpdate();
-				} catch (SQLException sqle) {
-					fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
-							+ "anlagen-jahr_id"
-							+ "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
-				}
-			}
-		}
-	}
-
-	/**
-	 * Fügt eine neue Zeile in der Datenbank in die Tabelle
-	 * "Anlagen_Monatsmengen_ID" ein
-	 * 
-	 * @param arguments
-	 *            Daten die gespeichert werden sollen
-	 */
-	public static void insertIn_AnlagenMonatsmengenID(String[] arguments) {
-
-		verbindung = gibVerbindungsInstanz();
-		if (verbindung != null) {
-			try {
-				PreparedStatement pstmt = verbindung
-						.prepareStatement("INSERT INTO `anlagen_monatsmengen_id`(`Monat_ID`, `Anlagen_Jahr_ID`, `Monat`, "
-								+ "`Ist-Gasmenge (Anlage)`, `Soll-Gasmenge (Anlage)`, `THG-Emissionswert`, `Anlagen_Jahr`, "
-								+ "`Jahr_Monat`, `Anlagen_ID`) "
-								+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-				pstmt.setInt(1, Integer.parseInt(arguments[0]));
-				pstmt.setInt(2, Integer.parseInt(arguments[1]));
-				pstmt.setString(3, arguments[2]);
-				pstmt.setDouble(4, Double.valueOf(arguments[3]));
-				pstmt.setDouble(5, Double.valueOf(arguments[4]));
-				if (arguments[5] != null) {
-					pstmt.setDouble(6, Double.valueOf(arguments[5]));
-				} else {
-					pstmt.setNull(6, java.sql.Types.DOUBLE);
-				}
-				pstmt.setInt(7, Integer.parseInt(arguments[6]));
-				pstmt.setInt(8, Integer.parseInt(arguments[7]));
-				pstmt.setInt(9, Integer.parseInt(arguments[8]));
-
-				pstmt.executeUpdate();
-			} catch (SQLException e) {
-				try {
-					PreparedStatement pstmt = verbindung
-							.prepareStatement("UPDATE `anlagen_monatsmengen_id` SET `Soll-Gasmenge (Anlage)` = ?"
-									+ " WHERE `Monat_ID` = ?");
-					pstmt.setDouble(1, Double.valueOf(arguments[4]));
-					pstmt.setInt(2, Integer.parseInt(arguments[0]));
-
-					pstmt.executeUpdate();
-				} catch (SQLException sqle) {
-					fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
-							+ "anlagen_monatsmengen_id"
-							+ "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
-				}
-
-			}
-		}
-	}
-
-	/**
-	 * Fügt eine neue Zeile in der Datenbank in die Tabelle "Kundenberater_ID"
-	 * ein
-	 * 
-	 * @param arguments
-	 *            Daten die gespeichert werden sollen
-	 */
-	public static void insertIn_KundenberaterID(String[] arguments) {
-		verbindung = gibVerbindungsInstanz();
-		if (verbindung != null) {
-			try {
-				PreparedStatement pstmt = verbindung
-						.prepareStatement("INSERT INTO `kundenberater_id`(`Kundenberater_ID`, `Kundenberater`, `Straße`, `PLZ`, `Ort`, `Telefonnummer`, `Handynummer`, `E-Mail`) "
-								+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-
-				int laenge = arguments.length;
-
-				pstmt.setInt(1, Integer.parseInt(arguments[0]));
-				pstmt.setString(2, arguments[1]);
-
-				for (int i = 2; i < laenge; i++) {
-					pstmt.setString(i + 1, arguments[i]);
-				}
-				while (laenge < 8) {
-					pstmt.setString(laenge + 1, "");
-					laenge++;
-				}
-
-				pstmt.executeUpdate();
-			} catch (SQLException e) {
-				fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
-						+ "kundenberater_id"
+				fehlerAusgeben("Fehler beim Abfragen der Daten vom Server beim Ausführen des Befehls: \n'"
 						+ "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
 			}
 		}
+		return null;
+	}
+
+	public static ResultSet getGroupRanking(String groupName) {
+
+		connection = getConnectionInstance();
+		if (connection != null) {
+			// Anfrage-Statement erzeugen.
+			try {
+				PreparedStatement pstmt = connection
+						.prepareStatement("SELECT `Name`, `Punktzahl` FROM `VERBINDUNG` WHERE `Gruppenname` = ? ORDER BY `Punktzahl` DESC");
+				pstmt.setString(1, groupName);
+				pstmt.executeQuery();
+
+				// Ergebnistabelle erzeugen und abholen.
+				return pstmt.executeQuery();
+
+			} catch (SQLException e) {
+				fehlerAusgeben("Fehler beim Abfragen der Daten vom Server beim Ausführen des Befehls: \n'"
+						+ "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
+			}
+		}
+		return null;
+	}
+
+	public static boolean checkUserLogin(String userName, String userPassword) {
+		connection = getConnectionInstance();
+		if (connection != null) {
+			// Anfrage-Statement erzeugen.
+			try {
+				PreparedStatement pstmt = connection
+						.prepareStatement("SELECT `Name` FROM `USER` WHERE `Name` = ? AND `Passwort` = ?");
+				pstmt.setString(1, userName);
+				pstmt.setString(2, userPassword);
+
+				// try to find tupel with userName and userPassword
+				ResultSet loginResult = pstmt.executeQuery();
+				if (loginResult != null && loginResult.next()) {
+					return true;
+				}
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+				fehlerAusgeben("Fehler beim Abfragen der Daten vom Server beim Ausführen des Befehls: \n'"
+						+ "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
+			}
+		}
+		return false;
+	}
+
+	public static boolean checkGroupLogin(String groupName, String groupPassword) {
+		connection = getConnectionInstance();
+		if (connection != null) {
+			// Anfrage-Statement erzeugen.
+			try {
+				PreparedStatement pstmt = connection
+						.prepareStatement("SELECT `Gruppenname` FROM `GRUPPEN` WHERE `Gruppenname` = ? AND `Gruppenpasswort` = ?");
+
+				pstmt.setString(1, groupName);
+				pstmt.setString(2, groupPassword);
+
+				ResultSet result = pstmt.executeQuery();
+				if (result != null && result.next()) {
+					return true;
+				}
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+				fehlerAusgeben("Fehler beim Abfragen der Daten vom Server beim Ausführen des Befehls: \n'"
+						+ "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -404,265 +209,50 @@ public class MySQLConnection {
 	 * @param arguments
 	 *            Daten die gespeichert werden sollen
 	 */
-	public static void insertIn_KundenID(String[] arguments) {
-		verbindung = gibVerbindungsInstanz();
-		if (verbindung != null) {
+	public static boolean registerUser(String userName, String userPassword) {
+		connection = getConnectionInstance();
+		if (connection != null) {
 			try {
 				PreparedStatement pstmt;
-				int i = 0;
-				if (arguments[0].equals("-1")) {
-					pstmt = verbindung
-							.prepareStatement("INSERT INTO `kunden_id`(`Name, Vorname`, `Stadtwerke`, `Biogasregister`, `Kundenanschrift`, `Anlagenanschrift`, `Kundenberater_ID`) "
-									+ "VALUES (?, ?, ?, ?, ?, ?)");
-				} else {
-					pstmt = verbindung
-							.prepareStatement("INSERT INTO `kunden_id`(`Kunden_ID`, `Name, Vorname`, `Stadtwerke`, `Biogasregister`, `Kundenanschrift`, `Anlagenanschrift`, `Kundenberater_ID`) "
-									+ "VALUES (?, ?, ?, ?, ?, ?, ?)");
-					pstmt.setInt(1, Integer.parseInt(arguments[0]));
-					i++;
-				}
-
-				pstmt.setString(i + 1, arguments[1]);
-				i++;
-
-				if (arguments[2].equals("1")) {
-					pstmt.setBoolean(i + 1, true);
-				} else {
-					pstmt.setBoolean(i + 1, false);
-				}
-				i++;
-
-				if (arguments[3].equals("1")) {
-					pstmt.setBoolean(i + 1, true);
-				} else {
-					pstmt.setBoolean(i + 1, false);
-				}
-				i++;
-
-				pstmt.setString(i + 1, arguments[4]);
-				i++;
-
-				pstmt.setString(i + 1, arguments[5]);
-				i++;
-
-				if (arguments[6].equals("")) {
-					pstmt.setNull(i + 1, java.sql.Types.INTEGER);
-				} else {
-					pstmt.setInt(i + 1, Integer.parseInt(arguments[6]));
-				}
+				pstmt = connection
+						.prepareStatement("INSERT INTO `USER`(`Name`, `Passwort`) VALUES (?, ?)");
+				pstmt.setString(1, userName.toLowerCase());
+				pstmt.setString(2, userPassword);
 
 				pstmt.executeUpdate();
+				return true;
 			} catch (SQLException e) {
-				fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
-						+ "kunden_id"
-						+ "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
+				// fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
+				// + "kunden_id"
+				// +
+				// "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
 			}
 		}
+		return false;
 	}
 
-	/**
-	 * Fügt eine neue Zeile in der Datenbank in die Tabelle
-	 * "Kunden_Monatsmengen_Vertrag_ID" ein
-	 * 
-	 * @param arguments
-	 *            Daten die gespeichert werden sollen
-	 */
-	public static void insertIn_KundenMonatsmengenVertragID(String[] arguments) {
-
-		verbindung = gibVerbindungsInstanz();
-		if (verbindung != null) {
+	public static boolean addUserToGroup(String userName, String groupName) {
+		connection = getConnectionInstance();
+		if (connection != null) {
 			try {
-				PreparedStatement pstmt = verbindung
-						.prepareStatement("INSERT INTO `kunden_monatsmengen_vertrag_id`(`Monat_Vetrag_ID`, `Vetrags-Jahr_ID`, `Monat_ID`, `Monat`, `Ist-Gasmenge`, `Soll-Gasmenge`, `THG-Emissionswert`, `CNG-Abgabemenge (t)`, `Jahr`, `Jahr_Monat`, `Anlagen_ID`) "
-								+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-				pstmt.setLong(1, Long.valueOf(arguments[0]));
-				pstmt.setLong(2, Long.valueOf(arguments[1]));
-				pstmt.setInt(3, Integer.parseInt(arguments[2]));
-				pstmt.setString(4, arguments[3]);
-				pstmt.setDouble(5, Double.valueOf(arguments[4]));
-				pstmt.setDouble(6, Double.valueOf(arguments[5]));
-				if (arguments[6] != null && arguments[6].length() > 0) {
-					pstmt.setDouble(7, Double.valueOf(arguments[6]));
-				} else {
-					pstmt.setNull(7, java.sql.Types.DOUBLE);
-				}
-				if (arguments[7] != null) {
-					pstmt.setDouble(8, Double.valueOf(arguments[7]));
-				} else {
-					pstmt.setNull(8, java.sql.Types.DOUBLE);
-				}
-				pstmt.setString(9, arguments[8]);
-				pstmt.setInt(10, Integer.parseInt(arguments[9]));
-				pstmt.setInt(11, Integer.parseInt(arguments[10]));
-
-				pstmt.executeUpdate();
-			} catch (SQLException e) {
-				try {
-					PreparedStatement pstmt = verbindung
-							.prepareStatement("UPDATE `kunden_monatsmengen_vertrag_id` "
-									+ "SET `Ist-Gasmenge` = ?,`Soll-Gasmenge` = ? "
-									+ "WHERE `Monat_Vetrag_ID` = "
-									+ arguments[0]);
-
-					pstmt.setDouble(1, Double.valueOf(arguments[4]));
-					pstmt.setDouble(2, Double.valueOf(arguments[5]));
-
-					pstmt.executeUpdate();
-				} catch (SQLException sqle) {
-					fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
-							+ "kunden_monatsmengen_vertrag_id"
-							+ "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
-				}
-			}
-		}
-
-	}
-
-	/**
-	 * Fügt eine neue Zeile in der Datenbank in die Tabelle "Kunden_Vertrag_ID"
-	 * ein
-	 * 
-	 * @param arguments
-	 *            Daten die gespeichert werden sollen
-	 */
-	public static void insertIn_KundenVertragID(String[] arguments) {
-
-		verbindung = gibVerbindungsInstanz();
-		if (verbindung != null) {
-			try {
-				PreparedStatement pstmt = verbindung
-						.prepareStatement("INSERT INTO `kunden_vertrag_id`(`Vertrag_ID`, `Zählpunkt/Bilanzkreis_ID`, `Vertragseigenschaften`, `Vertrag`, `Tankstelle`, `B2C`) "
-								+ "VALUES (?, ?, ?, ?, ?, ?)");
-
-				pstmt.setInt(1, Integer.parseInt(arguments[0]));
-				pstmt.setInt(2, Integer.parseInt(arguments[1]));
-				if (arguments.length > 2) {
-					pstmt.setString(3, arguments[2]);
-				} else {
-					pstmt.setString(3, "");
-				}
-				if (arguments.length > 3) {
-					pstmt.setString(4, arguments[3]);
-				} else {
-					pstmt.setString(4, "");
-				}
-				if (arguments[4].equals("0")) {
-					pstmt.setBoolean(5, false);
-				} else {
-					pstmt.setBoolean(5, true);
-				}
-				if (arguments[5].equals("0")) {
-					pstmt.setBoolean(6, false);
-				} else {
-					pstmt.setBoolean(6, true);
-				}
-
-				pstmt.executeUpdate();
-			} catch (SQLException e) {
-				fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
-						+ "kunden_vertrag_id"
-						+ "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
-			}
-		}
-
-	}
-
-	/**
-	 * Fügt eine neue Zeile in der Datenbank in die Tabelle
-	 * "Kunden_Vertrags-Jahr_ID" ein
-	 * 
-	 * @param arguments
-	 *            Daten die gespeichert werden sollen
-	 */
-	public static void insertIn_KundenVertragsJahrID(String[] arguments) {
-
-		verbindung = gibVerbindungsInstanz();
-		if (verbindung != null) {
-			try {
-				PreparedStatement pstmt = verbindung
-						.prepareStatement("INSERT INTO `kunden_vertrags-jahr_id`(`Vertrags-Jahr_ID`, `Vertrag_ID`, `Jahr`, `Min-Vertragsmenge`, `Max-Vertragsmenge`) "
-								+ "VALUES (?, ?, ?, ?, ?)");
-
-				pstmt.setLong(1, Long.valueOf(arguments[0]));
-				pstmt.setInt(2, Integer.parseInt(arguments[1]));
-				pstmt.setInt(3, Integer.parseInt(arguments[2]));
-				if (arguments.length > 3) {
-					if (arguments[3].equals("")) {
-						pstmt.setNull(4, java.sql.Types.INTEGER);
-					} else {
-						pstmt.setInt(4, Integer.parseInt(arguments[3]));
-					}
-					if (arguments.length > 4) {
-						if (arguments[4].equals("")) {
-							pstmt.setNull(5, java.sql.Types.INTEGER);
-						} else {
-							pstmt.setInt(5, Integer.parseInt(arguments[4]));
-						}
-					} else {
-						pstmt.setNull(5, java.sql.Types.INTEGER);
-					}
-				} else {
-					pstmt.setNull(4, java.sql.Types.INTEGER);
-					pstmt.setNull(5, java.sql.Types.INTEGER);
-				}
-
-				pstmt.executeUpdate();
-			} catch (SQLException e) {
-				fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
-						+ "kunden_vertrags-jahr_id"
-						+ "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
-			}
-		}
-	}
-
-	/**
-	 * Fügt eine neue Zeile in der Datenbank in die Tabelle
-	 * "Zählpunkt_Bilanzkreis_ID" ein
-	 * 
-	 * @param arguments
-	 *            Daten die gespeichert werden sollen
-	 */
-	public static void insertIn_ZaehlpunktBilanzkreisID(String[] arguments) {
-		verbindung = gibVerbindungsInstanz();
-		if (verbindung != null) {
-			try {
-
 				PreparedStatement pstmt;
-				int i = 1;
-				if (arguments[0].equals("-1")) {
-					pstmt = verbindung
-							.prepareStatement("INSERT INTO `zählpunkt-bilanzkreis_id` "
-									+ "(`Zählpunkt/Bilanzkreis_ID`, `Kunden_ID`, `Vertragsnummer`) "
-									+ "VALUES (?, ?, ?)");
-				} else {
-					pstmt = verbindung
-							.prepareStatement("INSERT INTO `zählpunkt-bilanzkreis_id` "
-									+ "(`ZB_ID`, `Zählpunkt/Bilanzkreis_ID`, `Kunden_ID`, `Vertragsnummer`) "
-									+ "VALUES (?, ?, ?, ?)");
-					pstmt.setInt(i, Integer.parseInt(arguments[0]));
-					i++;
-				}
-
-				pstmt.setString(i, arguments[1]);
-				i++;
-
-				pstmt.setInt(i, Integer.parseInt(arguments[2]));
-				i++;
-
-				if (arguments.length > 3) {
-					pstmt.setString(i, arguments[3]);
-				} else {
-					pstmt.setString(i, "");
-				}
+				pstmt = connection
+						.prepareStatement("INSERT INTO `VERBINDUNG`(`Name`, `Gruppenname`, `Punktzahl`, `Spieltag`) VALUES (?, ?, 0, 0)");
+				pstmt.setString(1, userName.toLowerCase());
+				pstmt.setString(2, groupName.toLowerCase());
 
 				pstmt.executeUpdate();
+				return true;
 			} catch (SQLException e) {
-				fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
-						+ "zählpunkt-bilanzkreis_id"
-						+ "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
+				// e.printStackTrace();
+				System.out.println("user is already in group");
+				// fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
+				// + "kunden_id"
+				// +
+				// "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
 			}
 		}
+		return false;
 	}
 
 	/**
@@ -671,10 +261,279 @@ public class MySQLConnection {
 	 * 
 	 * @return Verbindungsinstanz zum Server
 	 */
-	private static Connection gibVerbindungsInstanz() {
-		if (verbindung == null)
-			new MySQLConnection();
-		return verbindung;
+	private static Connection getConnectionInstance() {
+		try {
+			if (connection == null) {
+				new MySQLConnection();
+				// System.out.println("connection war null, jetzt valid: "
+				// + connection.isValid(1000) + ", closed: "
+				// + connection.isClosed());
+			} else {
+				// System.out.println("connection != null, valid: "
+				// + connection.isValid(1000) + ", closed: "
+				// + connection.isClosed());
+				if (connection.isClosed() || !connection.isValid(1000)) {
+					new MySQLConnection();
+					// System.out.println("neue connection, valid: "
+					// + connection.isValid(1000) + ", closed: "
+					// + connection.isClosed());
+				}
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return connection;
+	}
+
+	public static ResultSet getBundeligaErgebnisse(int spielTag) {
+		connection = getConnectionInstance();
+		if (connection != null) {
+			try {
+				PreparedStatement pstmt;
+				pstmt = connection
+						.prepareStatement("SELECT `Heim-Tore`, `Gast-Tore` FROM `Bundesligaspielplan` WHERE `Spieltag` = ?");
+				pstmt.setInt(1, spielTag);
+
+				return pstmt.executeQuery();
+			} catch (SQLException e) {
+				e.printStackTrace();
+				// System.out.println("fehler beim Spielplan erstellen");
+				// fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
+				// + "kunden_id"
+				// +
+				// "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
+			}
+		}
+		return null;
+	}
+
+	public static boolean saveBundesligaPlan(String row) {
+		connection = getConnectionInstance();
+		if (connection != null) {
+			try {
+				PreparedStatement pstmt;
+				pstmt = connection
+						.prepareStatement("INSERT INTO `Bundesligaspielplan`(`Spieltag`, `Termin`, `Heim`, `Gast`) "
+								+ "VALUES (?, ?, ?, ?)");
+				String[] colums = row.split(";");
+				pstmt.setInt(1, Integer.parseInt(colums[0]));
+				pstmt.setString(2, colums[1]);
+				pstmt.setString(3, colums[2]);
+				pstmt.setString(4, colums[3]);
+				// pstmt.setString(2, groupName.toLowerCase());
+
+				pstmt.executeUpdate();
+				return true;
+			} catch (SQLException e) {
+				e.printStackTrace();
+				// System.out.println("fehler beim Spielplan erstellen");
+				// fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
+				// + "kunden_id"
+				// +
+				// "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
+			}
+		}
+		return false;
+	}
+
+	public static boolean updateBundesligaErgebnisse(String row) {
+		connection = getConnectionInstance();
+		if (connection != null) {
+			try {
+				String[] columns = row.split(";");
+				if (columns.length >= 6) {
+					int heimTore = Integer.parseInt(columns[4]);
+					int gastTore = Integer.parseInt(columns[5]);
+					String heimMannschaft = columns[2];
+					String gastMannschaft = columns[3];
+
+					PreparedStatement pstmt;
+					pstmt = connection
+							.prepareStatement("UPDATE `Bundesligaspielplan` SET `Heim-Tore` = ?,`Gast-Tore` = ? "
+									+ "WHERE `Heim` = ? and `Gast` = ?");
+					pstmt.setInt(1, heimTore);
+					pstmt.setInt(2, gastTore);
+					pstmt.setString(3, heimMannschaft);
+					pstmt.setString(4, gastMannschaft);
+					pstmt.executeUpdate();
+
+					if (heimTore > gastTore) {
+
+					} else if (heimTore < gastTore) {
+
+					} else {
+
+					}
+
+					return true;
+				} else {
+					return false;
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+				// System.out.println("fehler beim Spielplan erstellen");
+				// fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
+				// + "kunden_id"
+				// +
+				// "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
+			}
+		}
+		return false;
+	}
+
+	public static ResultSet getBundesligaTabelle() {
+		connection = getConnectionInstance();
+		if (connection != null) {
+			try {
+				PreparedStatement pstmt;
+				pstmt = connection
+						.prepareStatement("SELECT `Team`, `Spieltag`, `Geschossene-Tore`, `Gegentore`, `Tordifferenz`, `Punkte` FROM `Bundesligatabelle` WHERE 1 "
+								+ "ORDER BY `Punkte` desc, `Tordifferenz` desc, `Geschossene-Tore` desc,`Team` asc");
+
+				return pstmt.executeQuery();
+			} catch (SQLException e) {
+				e.printStackTrace();
+				// System.out.println("fehler beim Spielplan erstellen");
+				// fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
+				// + "kunden_id"
+				// +
+				// "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
+			}
+		}
+		return null;
+	}
+
+	public static void updateBundesligaTabelle() {
+
+	}
+
+	public static boolean saveBundesligaTabelle(String team, int spieltag,
+			int siege, int unentschieden, int niederlagen, int geschosseneTore,
+			int gegentore, int torDifferenz, int punkte) {
+		connection = getConnectionInstance();
+		if (connection != null) {
+			try {
+				PreparedStatement pstmt;
+				pstmt = connection
+						.prepareStatement("UPDATE `Bundesligatabelle` SET `Spieltag`=?,`Siege`=?,`Unentschieden`=?,`Niederlage`=?,"
+								+ "`Geschossene-Tore`=?,`Gegentore`=?,`Tordifferenz`=?,`Punkte`=?"
+								+ " WHERE `Team` = ?");
+				pstmt.setInt(1, spieltag);
+				pstmt.setInt(2, siege);
+				pstmt.setInt(3, unentschieden);
+				pstmt.setInt(4, niederlagen);
+				pstmt.setInt(5, geschosseneTore);
+				pstmt.setInt(6, gegentore);
+				pstmt.setInt(7, torDifferenz);
+				pstmt.setInt(8, punkte);
+				pstmt.setString(9, team);
+
+				pstmt.executeUpdate();
+				return true;
+			} catch (SQLException e) {
+				e.printStackTrace();
+				// System.out.println("fehler beim Spielplan erstellen");
+				// fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
+				// + "kunden_id"
+				// +
+				// "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
+			}
+		}
+		return false;
+	}
+
+	public static ResultSet getBundeligaSpieltag(int spielTag) {
+		connection = getConnectionInstance();
+		if (connection != null) {
+			try {
+				PreparedStatement pstmt;
+				pstmt = connection
+						.prepareStatement("SELECT `Spieltag`, `Heim`, `Gast`, `Heim-Tore`, `Gast-Tore` "
+								+ "FROM `Bundesligaspielplan` WHERE `Spieltag` = ?");
+				pstmt.setInt(1, spielTag);
+
+				return pstmt.executeQuery();
+			} catch (SQLException e) {
+				e.printStackTrace();
+				// System.out.println("fehler beim Spielplan erstellen");
+				// fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
+				// + "kunden_id"
+				// +
+				// "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
+			}
+		}
+		return null;
+	}
+
+	public static ResultSet getTipp(int spielTag, String gruppe, String user) {
+		connection = getConnectionInstance();
+		if (connection != null) {
+			try {
+				PreparedStatement pstmt;
+				pstmt = connection
+						.prepareStatement("SELECT `Heimtipp`, `Gasttipp` "
+								+ "FROM `TIPPS` WHERE `Spieltag` = ? AND `Gruppenname` = ? AND `Name` = ?");
+				pstmt.setInt(1, spielTag);
+				pstmt.setString(2, gruppe);
+				pstmt.setString(3, user);
+
+				return pstmt.executeQuery();
+			} catch (SQLException e) {
+				e.printStackTrace();
+				// System.out.println("fehler beim Spielplan erstellen");
+				// fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
+				// + "kunden_id"
+				// +
+				// "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
+			}
+		}
+		return null;
+	}
+
+	public static boolean setTipp(int spieltag, String gruppe, String user,
+			String heim, String gast, int heimTipp, int gastTipp) {
+
+		connection = getConnectionInstance();
+		if (connection != null) {
+			try {
+				PreparedStatement pstmt;
+				pstmt = connection
+						.prepareStatement("INSERT INTO `TIPPS`(`Spieltag`, `Name`, `Gruppenname`, `Heim`, `Gast`, `Heimtipp`, `Gasttipp`) "
+								+ "VALUES (?, ?, ?, ?, ?, ?, ?)");
+				pstmt.setInt(1, spieltag);
+				pstmt.setString(2, user);
+				pstmt.setString(3, gruppe);
+				pstmt.setString(4, heim);
+				pstmt.setString(5, gast);
+				pstmt.setInt(6, heimTipp);
+				pstmt.setInt(7, gastTipp);
+
+				pstmt.executeUpdate();
+				return true;
+			} catch (SQLException e) {
+				try {
+					PreparedStatement pstmt;
+					pstmt = connection
+							.prepareStatement("UPDATE `TIPPS` SET `Heimtipp`=?,`Gasttipp`=? WHERE `Heim` = ? AND `Gast` = ?");
+					pstmt.setInt(1, heimTipp);
+					pstmt.setInt(2, gastTipp);
+					pstmt.setString(3, heim);
+					pstmt.setString(4, gast);
+
+					pstmt.executeUpdate();
+					return true;
+				} catch (SQLException e2) {
+					e2.printStackTrace();
+					// System.out.println("fehler beim Spielplan erstellen");
+					// fehlerAusgeben("Fehler beim Einfügen der Daten in die Tabelle: '"
+					// + "kunden_id"
+					// +
+					// "'\n\nBestehen weiterhin Probleme, kontaktieren Sie bitte den Administrator Sebastian Kühne");
+				}
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -685,13 +544,13 @@ public class MySQLConnection {
 	 *            SQL-String der vom Server verarbeitet werden soll
 	 * @return Ergebnis-Daten die der Server zurückliefert
 	 */
-	public static ResultSet gibDaten(String sqlAnfrage) {
-		verbindung = gibVerbindungsInstanz();
-		if (verbindung != null) {
+	public static ResultSet getData(String sqlAnfrage) {
+		connection = getConnectionInstance();
+		if (connection != null) {
 			// Anfrage-Statement erzeugen.
 			Statement anfrageStatement;
 			try {
-				anfrageStatement = verbindung.createStatement();
+				anfrageStatement = connection.createStatement();
 
 				// Ergebnistabelle erzeugen und abholen.
 				return anfrageStatement.executeQuery(sqlAnfrage);
